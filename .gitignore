@@ -1,0 +1,7 @@
+#Ignore node_modules directory
+node_modules/
+
+*.log
+
+#ignore config files ending in json (don't ignore example configs)
+config/*.json

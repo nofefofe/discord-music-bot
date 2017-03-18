@@ -1,0 +1,29 @@
+{
+  "name": "discord-music-bot",
+  "version": "1.0.0",
+  "description": "Yet another Discord music bot.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joek13/discord-music-bot.git"
+  },
+  "keywords": [
+    "discord",
+    "music",
+    "discord-bot",
+    "youtube",
+    "soundcloud"
+  ],
+  "author": "Joe K.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/joek13/discord-music-bot/issues"
+  },
+  "homepage": "https://github.com/joek13/discord-music-bot#readme",
+  "dependencies": {
+    "discord.js": "^11.0.0"
+  }
+}
