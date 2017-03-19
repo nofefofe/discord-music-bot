@@ -235,8 +235,7 @@ let commands = [
       let np = getNowPlaying();
       if(np)
       {
-        let playingPreview = preview.generatePreview(np);
-        message.channel.sendFile(playingPreview);
+        message.reply(`Currently playing **${np.title}**`);
       }else {
         message.reply("Nothing currently playing.");
       }
