@@ -78,6 +78,19 @@ If you've done everything correctly, your config should look something like this
 ```
 queueShownLength is mostly a quality of life option. When users run the `queue` command, this controls how many songs it will show before cutting off (to avoid clogging chat).
 
+Inviting your bot
+------
+Paste this link into your web browser: `https://discordapp.com/oauth2/authorize?permissions=66575424&scope=bot&client_id=`. Before you hit enter, copy the client id from your bot's page at the [Discord apps](https://discordapp.com/developers/applications/me) page and paste it at the end of the URL. Hit enter, and you should be able to invite the bot to your server.
+
 Running the bot
 ------
 Finally! You're ready to run the bot. Go back to your command window and type `node index.js` to start it up. The bot will run as long as this command window is open. If you want to run the bot permanently, look into [pm2](http://pm2.keymetrics.io/).
+
+FAQ/Help! IT DOESN'T WORK!
+------
+* It says that "node"/"npm" isn't recognized.
+  * Make sure you have [Node](https://nodejs.org/en/) installed.
+* I'm seeing `Error: config.json is missing.`
+  * Take a look at the [configuring section](https://github.com/joek13/discord-music-bot#configuring).
+* `The bot does not belong to the guild specified in config.json.`
+  * Make sure that the guild id set in `config.json` is correct and that you have actually invited your bot.
