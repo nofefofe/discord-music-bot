@@ -1,5 +1,12 @@
 const discord = require("discord.js");
 const client = new discord.Client();
+const fs = require("fs");
+
+if(!fs.existsSync("./config/config.json"))
+{
+  console.error("Error: config.json is missing. You may need to copy the example config before continuing.");
+}
+
 const config = require("./config/config.json");
 const command = require("./commands.js");
 
@@ -7,7 +14,7 @@ let guild;
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.username}`);
   command.ready(client);
-  
+
   guild = client.guilds.get(config.guildId);
 
   if(!guild)
