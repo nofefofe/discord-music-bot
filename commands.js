@@ -243,6 +243,16 @@ let commands = [
         message.reply("Nothing currently playing.");
       }
     }
+  },
+  {
+    name: "github",
+    aliases: ["gh"],
+    description: "Links to the bot's page on GitHub.",
+    parameters: [],
+    permission: permission.ANY,
+    run: (message) => {
+      message.reply("https://github.com/joek13/discord-music-bot");
+    }
   }
 ];
 function clamp (a, min, max)
