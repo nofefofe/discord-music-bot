@@ -2,10 +2,17 @@ const config = require("./config/config.json");
 const permission = require("./permissions.js");
 const ytdl = require("ytdl-core");
 
-let targetChannel = null;
+let client;
+let guild;
+module.exports.ready = (newClient) => {
+  client  = newClient;
+  guild = client.guilds.get(config.guildId);
+};
 let voiceConnection = null;
 let streamDispatcher = null;
+
 let queue = [];
+let nowPlaying = {};
 
 let commands = [
   {
@@ -53,7 +60,7 @@ let commands = [
             reply.push("**Parameters:**");
             for(let parameter of command.parameters)
             {
-              reply.push(`  ${parameter.name} ${parameter.optional ? "*(optional)*" : ""} - ${parameter.description}`);
+              reply.push(`  ${parameter.name}${parameter.optional ? " *(optional)*" : ""} - ${parameter.description}`);
               if(parameter.optional)
                 example.push(`[${parameter.name}]`);
               else
@@ -82,7 +89,7 @@ let commands = [
       }
     ],
     run: (message, params) => {
-      if(!message.member.voiceChannel)
+      if(!message.member.voiceChannel && queue.length === 0) //if the queue is empty, the first request must be from someone in a voice channel
       {
         return;
       }
@@ -94,17 +101,19 @@ let commands = [
         ytdl.getInfo(videoId, (err, info) => {
           if(err)
           {
-            message.reply(`There is an error with that video: ${err}`);
+            message.reply(err);
           }else {
             queue.push({
               id: videoId,
               name: info.title,
               author: message.author
             });
-            if(!voiceConnection) //start playing if the bot isn't already; otherwise, just wait for the queue to come to the current song.
+            if(queue.length === 1 && !voiceConnection) //start playing if the bot isn't already; otherwise, just wait for the queue to come to the current song.
             {
-              targetChannel = message.member.voiceChannel;
-              nextInQueue(message.guild);
+              message.member.voiceChannel.join().then((connection) => {
+                voiceConnection = connection;
+                nextInQueue();
+              });
             }else {
               message.reply(`Added **${info.title}** to queue. (#${queue.length} in line)`);
             }
@@ -112,25 +121,149 @@ let commands = [
         });
       }else {
         message.reply("Make sure you use a valid YouTube URL.");
+        //TODO youtube search if not matching
+      }
+    }
+  }, {
+    name: "stop",
+    description: "Stops any currently playing audio and clears the queue.",
+    aliases: [],
+    permission: permission.GUILD_ONLY,
+    parameters: [],
+    run: () => {
+      queue = [];
+      stopPlaying();
+    }
+  }, {
+    name: "volume",
+    aliases: ["vol", "v"],
+    description: "Changes the volume of the currently playing audio.",
+    parameters: [
+      {
+        name: "volume",
+        description: "Integer 0-100 representing the volume.",
+        optional: false
+      }
+    ],
+    permission: permission.GUILD_ONLY,
+    run: (message, params) => {
+      if(params.length >= 1)
+      {
+        try {
+          let volume = parseInt(params[0]);
+          streamDispatcher.setVolume(clamp(volume, 0, 100) / 100);
+        }catch(e)
+        {
+          message.reply(`Error setting volume: ${e}`);
+        }
+      }else {
+        message.reply("Target volume is required.");
+      }
+    }
+  }, {
+    name: "skip",
+    aliases: [],
+    description: "Skips the currently playing song and moves onto the next one in the queue.",
+    parameters: [],
+    permission: permission.GUILD_ONLY,
+    run: () => {
+      streamDispatcher.end();
+    }
+  }, {
+    name: "queue",
+    aliases: ["upnext"],
+    description: "See the next songs in the queue.",
+    parameters: [],
+    permission: permission.GUILD_ONLY,
+    run: (message) => {
+      if(queue.length >= 1)
+      {
+        let lines = ["**Current queue: **"];
+        for(let i = 0; i<queue.length; i++)
+        {
+          let song = queue[i];
+          lines.push(`  ${i+1}. **${song.name}** (requested by **${song.author.username}**)`);
+        }
+        message.reply(lines.join("\n"));
+      }else
+      {
+        message.reply("The song queue is empty.");
+      }
+    }
+  },
+  {
+    name: "clearqueue",
+    aliases: ["cq"],
+    description: "Clears the queue (without stopping what's currently playing)",
+    parameters: [],
+    permission: permission.GUILD_ONLY,
+    run: () => {
+      queue = [];
+    }
+  },
+  {
+    name: "pause",
+    aliases: ["p", "resume", "r"],
+    description: "Pauses/resumes the currently playing audio.",
+    parameters: [],
+    permission: permission.GUILD_ONLY,
+    run: (message) => {
+      if(streamDispatcher)
+      {
+        if(streamDispatcher.paused)
+        {
+          streamDispatcher.resume();
+          message.channel.sendMessage(":arrow_forward:");
+        }else
+        {
+          streamDispatcher.pause();
+          message.channel.sendMessage(":pause_button:");
+        }
       }
     }
   }
 ];
-
-function nextInQueue(guild)
+function clamp (a, min, max)
+{
+  if (a < min)return min;
+  else if (a > max) return max;
+  else return a;
+}
+function stopPlaying() {
+  if(voiceConnection)
+  {
+    voiceConnection.channel.leave();
+    voiceConnection = null;
+    client.user.setGame(null);
+  }
+}
+function nextInQueue()
 {
   if(queue.length === 0 && voiceConnection) //reached end of queue
   {
-    voiceConnection.channel.leave().catch(console.err);
+    stopPlaying();
   }else
   {
     let nextSong = queue.shift(); //get song next in line, remove from queue
-    playSong(nextSong.id, guild);
+    playSong(nextSong.id);
   }
 }
-function playSong(videoId, guild)
+function getNowPlaying()
 {
+  if(!streamDispatcher || !voiceConnection) return null;
+  else return nowPlaying;
+}
+function playSong(videoId)
+{
+  let textChannel = client.guilds.get(config.guildId).defaultChannel;
   let stream = ytdl(videoId, {filter: "audioonly", quality: "lowest"});
+  stream.on("info", (info) => {
+    nowPlaying = {
+      title: info.title,
+      image: info.thumbnail_url
+    };
+    client.user.setGame(info.title);
+  });
   stream.on("response", (response) => {
     if(response.statusCode === 200)
     {
@@ -138,30 +271,25 @@ function playSong(videoId, guild)
       {
         let dispatcher = voiceConnection.playStream(stream, {volume: .25, seek: 0});
         dispatcher.once("end", () => {
-          nextInQueue(guild);
+          nextInQueue();
         });
         dispatcher.on("error", (err) => {
-          nextInQueue(guild);
-          guild.defaultChannel.sendMessage(`Error playing video: ${err}`);
+          nextInQueue();
+          textChannel.sendMessage(`Error playing video: ${err}`);
         });
+
         streamDispatcher = dispatcher;
       }
-      else { //join voice channel
-        targetChannel.join().then((connection) => {
-          voiceConnection = connection;
-          playSong(videoId, guild); //try again now that bot is in voice channel
-        });
-      }
-    }else {
-      guild.defaultChannel.sendMessage("There was an error with the video.");
+    } else {
+      textChannel.sendMessage("There was an error with the video.");
       nextInQueue();
     }
   });
   stream.on("error", (err) => {
-    guild.defaultChannel.sendMessage(`Error playing video: ${err}`);
+    textChannel.sendMessage(`Error playing video: ${err}`);
   });
-
 }
+
 function findCommand(name) {
   for(let command of commands)
   {
@@ -198,7 +326,7 @@ function processMessage(message)
       }
     }else
       {
-      message.reply(`Command "${params[0]}" not found. Type ${config.commandPrefix}help for a list of commands.`);
+      message.reply(`Command "${commandIn}" not found. Type ${config.commandPrefix}help for a list of commands.`);
     }
   }
 }
