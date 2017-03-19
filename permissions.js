@@ -15,4 +15,5 @@ module.exports.checkPermission = (message, command) => {
   if(message.author.id === config.ownerId) return true;
   if(command.permission >= permission.ADMIN_ONLY && !message.member.hasPermission("ADMINISTRATOR")) return false;
   if(command.permission >= permission.OWNER_ONLY && message.author.id !== config.ownerId) return false;
+  return true;
 };
