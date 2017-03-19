@@ -94,7 +94,7 @@ let commands = [
       {
         return;
       }
-      let youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?youtube.com\/watch\?v\=(.+)$/i;
+      let youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?youtube.com\/watch\?v\=([^\&]+).*$/i;
       let match = youtubeRegex.exec(params[0]);
       if(match && match[1])
       {
