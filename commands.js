@@ -155,7 +155,8 @@ let commands = [
       {
         try {
           let volume = parseInt(params[0]);
-          streamDispatcher.setVolume(clamp(volume, 0, 100) / 100);
+          if(!isNaN(volume))
+            streamDispatcher.setVolume(clamp(volume, 0, 100) / 100);
         }catch(e)
         {
           message.reply(`Error setting volume: ${e}`);
@@ -252,6 +253,65 @@ let commands = [
     permission: permission.ANY,
     run: (message) => {
       message.reply("https://github.com/joek13/discord-music-bot");
+    }
+  },
+  {
+    name: "jump",
+    aliases: ["jq", "jumpqueue"],
+    description: "Takes a song and moves it to somewhere else in the queue.",
+    parameters: [
+      {
+        name: "from",
+        optional: false,
+        description: "the index (starting at 1) of the song to move."
+      },
+      {
+        name: "to",
+        optional: true,
+        description: "the index to move the song to (defaults to 1)"
+      }
+    ],
+    permission: permission.ADMIN_ONLY,
+    run: (message, params) => {
+      if(queue.length === 0)
+      {
+        message.reply("Queue is empty.");
+        return;
+      }
+      try {
+        let aIndex = parseInt(params[0]) - 1; //convert to be zero-indexed
+        let bIndex = 0;
+        if(params.length >= 2)
+        {
+          bIndex = parseInt(params[1]) - 1;
+        }
+        if(aIndex < 0 || aIndex >= queue.length || bIndex < 0 || bIndex >= queue.length || isNaN(aIndex) || isNaN(bIndex))
+        {
+          message.reply("That index is not valid.");
+        }else {
+          let removed = queue.splice(aIndex, 1)[0];
+          queue.splice(bIndex,0,removed); //add back into queue at new position
+
+          //display new queue
+
+          let lines = ["**New queue: **"];
+          for(let i = 0; i< (queue.length > config.queueShownLength ? config.queueShownLength : queue.length); i++)
+          {
+            let song = queue[i];
+            if(i === bIndex)
+            {
+              lines.push(`**>** ${i+1}. **${song.name}** (requested by **${song.author.username}**)`);
+            }else {
+              lines.push(`  ${i+1}. **${song.name}** (requested by **${song.author.username}**)`);
+            }
+          }
+          if(queue.length > config.queueShownLength)
+            lines.push(`  ...and ${queue.length-config.queueShownLength} more songs.`);
+          message.channel.sendMessage(lines.join("\n"));
+        }
+      } catch (e) {
+        message.reply(e);
+      }
     }
   }
 ];
