@@ -11,7 +11,7 @@ let permission =
 module.exports = permission;
 module.exports.checkPermission = (message, command) => {
   if(command.permission === permission.ANY) return true; //TODO: blacklist support
-  if(command.permission >= permission.GUILD_ONLY && !message.channel.guild) return false;
+  if(command.permission >= permission.GUILD_ONLY && !message.guild) return false;
   if(message.author.id === config.ownerId) return true;
   if(command.permission >= permission.ADMIN_ONLY && !message.member.hasPermission("ADMINISTRATOR")) return false;
   if(command.permission >= permission.OWNER_ONLY && message.author.id !== config.ownerId) return false;
