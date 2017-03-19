@@ -9,6 +9,16 @@ Features
 * Full control over the currently playing audio (volume, skip song, play/pause)
 * Linux `man` style command help :)
 
+Usage
+------
+Use the command `play <url>` to make the bot join your channel and start playing audio.
+
+Using `play` while audio is already playing will cause it to be added to the queue, which can be viewed using the `queue` command, and can be cleared with the `clearqueue` command.
+
+You can adjust the volume with `volume <0-100>` and pause/play with `pause`.
+
+For a complete list of commands, use the `help` command. If you want more specific information about a command, use `help <command>`.
+
 Installation
 ------
 Firstly, make sure you have [Node](https://nodejs.org/en/) installed. It is absolutely necessary to run this bot.
