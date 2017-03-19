@@ -114,6 +114,9 @@ let commands = [
               message.member.voiceChannel.join().then((connection) => {
                 voiceConnection = connection;
                 nextInQueue();
+              }).catch((err) => {
+                console.log(err);
+                message.reply(err);
               });
             }else {
               message.reply(`Added **${info.title}** to queue. (#${queue.length} in line)`);
