@@ -1,5 +1,6 @@
 {
   "token": "your bot token here",
   "commandPrefix": "!",
-  "ownerId": "your id here"
+  "ownerId": "your id here",
+  "guildId": "your guild id here"
 }

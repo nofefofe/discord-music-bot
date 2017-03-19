@@ -1,5 +1,11 @@
 const config = require("./config/config.json");
 const permission = require("./permissions.js");
+const ytdl = require("ytdl-core");
+
+let targetChannel = null;
+let voiceConnection = null;
+let streamDispatcher = null;
+let queue = [];
 
 let commands = [
   {
@@ -62,9 +68,100 @@ let commands = [
         }
       }
     }
+  },
+  {
+    name: "play",
+    aliases: ["request"],
+    description: "Adds a song to the queue to be played.",
+    permission: permission.GUILD_ONLY,
+    parameters: [
+      {
+        name: "url",
+        description: "The YouTube URL to the song.",
+        optional: false
+      }
+    ],
+    run: (message, params) => {
+      if(!message.member.voiceChannel)
+      {
+        return;
+      }
+      let youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?youtube.com\/watch\?v\=(.+)$/i;
+      let match = youtubeRegex.exec(params[0]);
+      if(match && match[1])
+      {
+        let videoId = match[1];
+        ytdl.getInfo(videoId, (err, info) => {
+          if(err)
+          {
+            message.reply(`There is an error with that video: ${err}`);
+          }else {
+            queue.push({
+              id: videoId,
+              name: info.title,
+              author: message.author
+            });
+            if(!voiceConnection) //start playing if the bot isn't already; otherwise, just wait for the queue to come to the current song.
+            {
+              targetChannel = message.member.voiceChannel;
+              nextInQueue(message.guild);
+            }else {
+              message.reply(`Added **${info.title}** to queue. (#${queue.length} in line)`);
+            }
+          }
+        });
+      }else {
+        message.reply("Make sure you use a valid YouTube URL.");
+      }
+    }
   }
 ];
 
+function nextInQueue(guild)
+{
+  if(queue.length === 0 && voiceConnection) //reached end of queue
+  {
+    voiceConnection.channel.leave().catch(console.err);
+  }else
+  {
+    let nextSong = queue.shift(); //get song next in line, remove from queue
+    playSong(nextSong.id, guild);
+  }
+}
+function playSong(videoId, guild)
+{
+  let stream = ytdl(videoId, {filter: "audioonly", quality: "lowest"});
+  stream.on("response", (response) => {
+    if(response.statusCode === 200)
+    {
+      if(voiceConnection) //is currently connected to channel, just play in there
+      {
+        let dispatcher = voiceConnection.playStream(stream, {volume: .25, seek: 0});
+        dispatcher.once("end", () => {
+          nextInQueue(guild);
+        });
+        dispatcher.on("error", (err) => {
+          nextInQueue(guild);
+          guild.defaultChannel.sendMessage(`Error playing video: ${err}`);
+        });
+        streamDispatcher = dispatcher;
+      }
+      else { //join voice channel
+        targetChannel.join().then((connection) => {
+          voiceConnection = connection;
+          playSong(videoId, guild); //try again now that bot is in voice channel
+        });
+      }
+    }else {
+      guild.defaultChannel.sendMessage("There was an error with the video.");
+      nextInQueue();
+    }
+  });
+  stream.on("error", (err) => {
+    guild.defaultChannel.sendMessage(`Error playing video: ${err}`);
+  });
+
+}
 function findCommand(name) {
   for(let command of commands)
   {
