@@ -4,6 +4,7 @@ const ytdl = require("ytdl-core");
 
 let client;
 let guild;
+
 module.exports.ready = (newClient) => {
   client  = newClient;
   guild = client.guilds.get(config.guildId);
@@ -179,12 +180,14 @@ let commands = [
       if(queue.length >= 1)
       {
         let lines = ["**Current queue: **"];
-        for(let i = 0; i<queue.length; i++)
+        for(let i = 0; i< (queue.length > config.queueShownLength ? config.queueShownLength : queue.length); i++)
         {
           let song = queue[i];
           lines.push(`  ${i+1}. **${song.name}** (requested by **${song.author.username}**)`);
         }
-        message.reply(lines.join("\n"));
+        if(queue.length > config.queueShownLength)
+          lines.push(`  ...and ${queue.length-config.queueShownLength} more songs.`);
+        message.channel.sendMessage(lines.join("\n"));
       }else
       {
         message.reply("The song queue is empty.");
@@ -221,6 +224,23 @@ let commands = [
         }
       }
     }
+  },
+  {
+    name: "nowplaying",
+    aliases: ["np"],
+    description: "Shows the currently playing audio.",
+    parameters: [],
+    permission: permission.GUILD_ONLY,
+    run: (message) => {
+      let np = getNowPlaying();
+      if(np)
+      {
+        let playingPreview = preview.generatePreview(np);
+        message.channel.sendFile(playingPreview);
+      }else {
+        message.reply("Nothing currently playing.");
+      }
+    }
   }
 ];
 function clamp (a, min, max)
@@ -239,7 +259,7 @@ function stopPlaying() {
 }
 function nextInQueue()
 {
-  if(queue.length === 0 && voiceConnection) //reached end of queue
+  if(queue.length === 0) //reached end of queue
   {
     stopPlaying();
   }else
@@ -260,7 +280,7 @@ function playSong(videoId)
   stream.on("info", (info) => {
     nowPlaying = {
       title: info.title,
-      image: info.thumbnail_url
+      image: info.iurlhq720
     };
     client.user.setGame(info.title);
   });
