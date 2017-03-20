@@ -94,11 +94,11 @@ let commands = [
       {
         return;
       }
-      let youtubeRegex = /^(?:https?:\/\/)?(?:www\.)?youtube.com\/watch\?v\=([^\&]+).*$/i;
+      let youtubeRegex = /^(?:(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/watch\?v\=([^\&]+).*)|(?:(?:https?:\/\/)?(?:www\.)?youtu\.be\/(.+))$/i;
       let match = youtubeRegex.exec(params[0]);
-      if(match && match[1])
+      if(match && (match[1] || match[2]))
       {
-        let videoId = match[1];
+        let videoId = match[1] ? match[1] : match[2];
         ytdl.getInfo(videoId, (err, info) => {
           if(err)
           {
@@ -123,7 +123,7 @@ let commands = [
             }
           }
         });
-      }else {
+      } else {
         message.reply("Make sure you use a valid YouTube URL.");
         //TODO youtube search if not matching
       }
