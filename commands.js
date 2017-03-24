@@ -94,11 +94,13 @@ let commands = [
       {
         return;
       }
-      let youtubeRegex = /^(?:(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/watch\?v\=([^\&]+).*)|(?:(?:https?:\/\/)?(?:www\.)?youtu\.be\/(.+))$/i;
+      let youtubeRegex = /^(?:(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/watch\?v\=([^\&]+)(?:\&t\=([0-9]+))?)|(?:(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^\&\?]+)(?:[\?\&]t\=([0-9]+))?)$/gi;
       let match = youtubeRegex.exec(params[0]);
-      if(match && (match[1] || match[2]))
+      if(match && (match[1] || match[3]))
       {
-        let videoId = match[1] ? match[1] : match[2];
+        let videoId = match[1] ? match[1] : match[3];
+        let timestamp = match[2] ? match[2] : match[4];
+        if(!timestamp) timestamp = 0;
         ytdl.getInfo(videoId, (err, info) => {
           if(err)
           {
@@ -107,7 +109,9 @@ let commands = [
             queue.push({
               id: videoId,
               name: info.title,
-              author: message.author
+              author: message.author,
+              beginTime: parseInt(timestamp),
+              length: info.length_seconds
             });
             if(queue.length === 1 && !voiceConnection) //start playing if the bot isn't already; otherwise, just wait for the queue to come to the current song.
             {
@@ -337,7 +341,7 @@ function nextInQueue()
   }else
   {
     let nextSong = queue.shift(); //get song next in line, remove from queue
-    playSong(nextSong.id);
+    playSong(nextSong);
   }
 }
 function getNowPlaying()
@@ -345,8 +349,9 @@ function getNowPlaying()
   if(!streamDispatcher || !voiceConnection) return null;
   else return nowPlaying;
 }
-function playSong(videoId)
+function playSong(song)
 {
+  let videoId = song.id;
   let textChannel = client.guilds.get(config.guildId).defaultChannel;
   let stream = ytdl(videoId, {filter: "audioonly", quality: "lowest"});
   stream.on("info", (info) => {
@@ -359,9 +364,10 @@ function playSong(videoId)
   stream.on("response", (response) => {
     if(response.statusCode === 200)
     {
+      console.log(response.headers);
       if(voiceConnection) //is currently connected to channel, just play in there
       {
-        let dispatcher = voiceConnection.playStream(stream, {volume: .25, seek: 0});
+        let dispatcher = voiceConnection.playStream(stream, {volume: .25, begin: song.beginTime + "s"});
         dispatcher.once("end", () => {
           nextInQueue();
         });
