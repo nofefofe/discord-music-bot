@@ -94,7 +94,7 @@ let commands = [
       {
         return;
       }
-      let youtubeRegex = /^(?:(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/watch\?v\=([^\&]+)(?:\&t\=([0-9]+))?)|(?:(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^\&\?]+)(?:[\?\&]t\=([0-9]+))?)$/gi;
+      let youtubeRegex = /^(?:(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/watch\?v\=([^\&]+)(?:\&t\=([0-9]+))?).+|(?:(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^\&\?]+)(?:[\?\&]t\=([0-9]+))?).+$/gi;
       let match = youtubeRegex.exec(params[0]);
       if(match && (match[1] || match[3]))
       {
