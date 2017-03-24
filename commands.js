@@ -94,7 +94,7 @@ let commands = [
       {
         return;
       }
-      let youtubeRegex = /^(?:(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/watch\?v\=([^\&]+)(?:\&t\=([0-9]+))?).+|(?:(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^\&\?]+)(?:[\?\&]t\=([0-9]+))?).+$/gi;
+      let youtubeRegex = /^(?:(?:https?:\/\/)?(?:www\.|m\.)?youtube\.com\/watch\?v\=([^\&]+)(?:\&t\=([0-9]+))?).*|(?:(?:https?:\/\/)?(?:www\.)?youtu\.be\/([^\&\?]+)(?:[\?\&]t\=([0-9]+))?).*$/gi;
       let match = youtubeRegex.exec(params[0]);
       if(match && (match[1] || match[3]))
       {
@@ -353,6 +353,7 @@ function playSong(song)
 {
   let videoId = song.id;
   let textChannel = client.guilds.get(config.guildId).defaultChannel;
+  console.log(song.beginTime);
   let stream = ytdl(videoId, {filter: "audioonly", quality: "lowest", begin: song.beginTime + "s"});
   stream.on("info", (info) => {
     nowPlaying = {
