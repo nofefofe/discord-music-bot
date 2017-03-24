@@ -353,7 +353,7 @@ function playSong(song)
 {
   let videoId = song.id;
   let textChannel = client.guilds.get(config.guildId).defaultChannel;
-  let stream = ytdl(videoId, {filter: "audioonly", quality: "lowest"});
+  let stream = ytdl(videoId, {filter: "audioonly", quality: "lowest", begin: song.beginTime + "s"});
   stream.on("info", (info) => {
     nowPlaying = {
       title: info.title,
@@ -364,10 +364,9 @@ function playSong(song)
   stream.on("response", (response) => {
     if(response.statusCode === 200)
     {
-      console.log(response.headers);
       if(voiceConnection) //is currently connected to channel, just play in there
       {
-        let dispatcher = voiceConnection.playStream(stream, {volume: .25, begin: song.beginTime + "s"});
+        let dispatcher = voiceConnection.playStream(stream, {volume: .25});
         dispatcher.once("end", () => {
           nextInQueue();
         });
