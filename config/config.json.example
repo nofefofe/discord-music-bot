@@ -1,7 +1,7 @@
 {
-  "token": "your bot token here",
-  "commandPrefix": "!",
-  "ownerId": "your id here",
-  "guildId": "your guild id here",
+  "token": "NzU4NjU1NjQ4MDU2NzM3Nzky.X2yHIQ.ElbXnQ63K66rtJLh2tY5wfAtSpI",
+  "commandPrefix": "&",
+  "ownerId": "552161613726089226",
+  "guildId": "642012638242668585",
   "queueShownLength": 10
 }
